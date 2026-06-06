@@ -9,6 +9,7 @@ import HealthRecords from './pages/HealthRecords';
 import Experiments from './pages/Experiments';
 import FeedingRecords from './pages/FeedingRecords';
 import Statistics from './pages/Statistics';
+import { AppConfigProvider } from './contexts/AppConfigContext';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -48,39 +49,41 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              isAuthenticated ? (
-                <Navigate to="/dashboard" replace />
-              ) : (
-                <Login onLogin={handleLogin} />
-              )
-            }
-          />
-          <Route
-            path="/"
-            element={
-              isAuthenticated ? (
-                <MainLayout user={currentUser} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="animals" element={<AnimalList />} />
-            <Route path="health" element={<HealthRecords />} />
-            <Route path="experiments" element={<Experiments />} />
-            <Route path="feeding" element={<FeedingRecords />} />
-            <Route path="statistics" element={<Statistics />} />
-          </Route>
-          <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
-        </Routes>
-      </BrowserRouter>
+      <AppConfigProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Login onLogin={handleLogin} />
+                )
+              }
+            />
+            <Route
+              path="/"
+              element={
+                isAuthenticated ? (
+                  <MainLayout user={currentUser} onLogout={handleLogout} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="animals" element={<AnimalList />} />
+              <Route path="health" element={<HealthRecords />} />
+              <Route path="experiments" element={<Experiments />} />
+              <Route path="feeding" element={<FeedingRecords />} />
+              <Route path="statistics" element={<Statistics />} />
+            </Route>
+            <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AppConfigProvider>
     </ErrorBoundary>
   );
 };

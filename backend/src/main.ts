@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -24,13 +25,17 @@ async function bootstrap() {
     }),
   });
 
+  const configService = app.get(ConfigService);
+  const logger = new Logger('Bootstrap');
+
+  const corsOrigin = configService.get<string>('app.corsOrigin') || '*';
   app.enableCors({
-    origin: '*',
+    origin: corsOrigin === '*' ? true : corsOrigin.split(','),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix(configService.get<string>('app.globalPrefix') || 'api');
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -54,8 +59,10 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 8000;
+  const port = configService.get<number>('app.port') || 8000;
   await app.listen(port);
+  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Environment: ${configService.get<string>('app.nodeEnv')}`);
 }
 
 bootstrap();

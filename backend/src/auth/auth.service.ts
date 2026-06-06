@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -19,19 +20,22 @@ export class AuthService implements OnModuleInit {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async onModuleInit() {
     const count = await this.userRepository.count();
     if (count === 0) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+      const defaultAdminUsername = this.configService.get<string>('auth.defaultAdminUsername') || 'admin';
+      const defaultAdminPassword = this.configService.get<string>('auth.defaultAdminPassword') || 'admin123';
+      const hashedPassword = await bcrypt.hash(defaultAdminPassword, 10);
       await this.userRepository.save({
-        username: 'admin',
+        username: defaultAdminUsername,
         password: hashedPassword,
         name: '系统管理员',
         role: 'admin',
       });
-      this.logger.log('Default admin user created (admin / admin123)');
+      this.logger.log(`Default admin user created (${defaultAdminUsername} / ${defaultAdminPassword})`);
     }
   }
 
