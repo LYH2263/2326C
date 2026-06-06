@@ -9,10 +9,11 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AnimalsService } from './animals.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
+import { QueryAnimalDto } from './dto/query-animal.dto';
 
 @ApiTags('动物管理')
 @Controller('animals')
@@ -27,19 +28,8 @@ export class AnimalsController {
 
   @Get()
   @ApiOperation({ summary: '查询动物列表' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'pageSize', required: false })
-  @ApiQuery({ name: 'species', required: false })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'keyword', required: false })
-  findAll(
-    @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
-    @Query('species') species?: string,
-    @Query('status') status?: string,
-    @Query('keyword') keyword?: string,
-  ) {
-    return this.animalsService.findAll({ page, pageSize, species, status, keyword });
+  findAll(@Query() query: QueryAnimalDto) {
+    return this.animalsService.findAll(query);
   }
 
   @Get('species')

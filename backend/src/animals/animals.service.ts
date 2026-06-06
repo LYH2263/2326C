@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Animal } from './entities/animal.entity';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
+import { QueryAnimalDto } from './dto/query-animal.dto';
 
 @Injectable()
 export class AnimalsService {
@@ -21,26 +22,64 @@ export class AnimalsService {
     return saved;
   }
 
-  async findAll(query: {
-    page?: number;
-    pageSize?: number;
-    species?: string;
-    status?: string;
-    keyword?: string;
-  }): Promise<{ list: Animal[]; total: number }> {
-    const { page = 1, pageSize = 10, species, status, keyword } = query;
-    const where: any = {};
+  async findAll(query: QueryAnimalDto): Promise<{ list: Animal[]; total: number }> {
+    const {
+      page = 1,
+      pageSize = 10,
+      species,
+      status,
+      keyword,
+      weightMin,
+      weightMax,
+      birthDateStart,
+      birthDateEnd,
+      sortBy,
+      sortOrder,
+    } = query;
 
-    if (species) where.species = species;
-    if (status) where.status = status;
-    if (keyword) where.name = Like(`%${keyword}%`);
+    const qb: SelectQueryBuilder<Animal> = this.animalRepository.createQueryBuilder('animal');
 
-    const [list, total] = await this.animalRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
+    if (species) {
+      qb.andWhere('animal.species = :species', { species });
+    }
+
+    if (status) {
+      qb.andWhere('animal.status = :status', { status });
+    }
+
+    if (keyword) {
+      qb.andWhere(
+        '(animal.name LIKE :keyword OR animal.species LIKE :keyword OR animal.breed LIKE :keyword OR animal.source LIKE :keyword)',
+        { keyword: `%${keyword}%` },
+      );
+    }
+
+    if (weightMin !== undefined) {
+      qb.andWhere('animal.weight >= :weightMin', { weightMin });
+    }
+
+    if (weightMax !== undefined) {
+      qb.andWhere('animal.weight <= :weightMax', { weightMax });
+    }
+
+    if (birthDateStart) {
+      qb.andWhere('animal.birthDate >= :birthDateStart', { birthDateStart });
+    }
+
+    if (birthDateEnd) {
+      qb.andWhere('animal.birthDate <= :birthDateEnd', { birthDateEnd });
+    }
+
+    if (sortBy) {
+      qb.orderBy(`animal.${sortBy}`, sortOrder || 'DESC');
+    } else {
+      qb.orderBy('animal.createdAt', 'DESC');
+    }
+
+    qb.skip((page - 1) * pageSize);
+    qb.take(pageSize);
+
+    const [list, total] = await qb.getManyAndCount();
 
     return { list, total };
   }
