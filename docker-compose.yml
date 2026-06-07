@@ -41,6 +41,10 @@ services:
       NODE_ENV: production
       PORT: 8000
       TZ: Asia/Shanghai
+      JWT_SECRET: lab_animal_jwt_secret_key_2326c
+      JWT_EXPIRES_IN: 24h
+      DEFAULT_ADMIN_USERNAME: admin
+      DEFAULT_ADMIN_PASSWORD: admin123
     depends_on:
       db:
         condition: service_healthy
